@@ -34,23 +34,41 @@ class JenkinsJobs:
     def __init__(self, connection):
         self.connection = connection
 
-    def getJobsInfo(self):
-        self.output = []
-        self.jobs = self.connection.getServer().get_jobs()
-        for eachJob in self.jobs:
-            self.builds = self.connection.getServer().get_job_info(eachJob['name'])
-            for eachBuild in self.builds['builds']:
-                self.build = self.connection.getServer().get_build_info(eachJob['name'],int(eachBuild['number']))
-                self.output.append((eachJob['name'],eachBuild['number'],str(datetime.utcfromtimestamp(int(str(self.build['timestamp'])[:10]))),self.build['actions'][0]['causes'][0].get('userName'),self.build['result']))
+    def sortBuild(joblist):
+        return joblist[1]
+
+    def sortDate(joblist):
+        return datetime.strptime(joblist[2], '%Y-%m-%d %H:%M:%S')
+
+    def getJobsInfo(self, sort = 'b'):
+        if sort == 'b' or sort == 'd':
+            self.output = []
+            self.temp = []
+            self.jobs = self.connection.getServer().get_jobs()
+            for eachJob in self.jobs:
+                self.builds = self.connection.getServer().get_job_info(eachJob['name'])
+                for eachBuild in self.builds['builds']:
+                    self.build = self.connection.getServer().get_build_info(eachJob['name'],int(eachBuild['number']))
+                    self.temp.append((eachJob['name'],eachBuild['number'],str(datetime.utcfromtimestamp(int(str(self.build['timestamp'])[:10]))),self.build['actions'][0]['causes'][0].get('userName'),self.build['result']))
+                if sort == 'b':
+                    self.temp.sort(reverse=True, key=JenkinsJobs.sortBuild)
+                    self.output += self.temp
+                    self.temp.clear()
+                if sort == 'd':
+                    self.temp.sort(reverse=True, key=JenkinsJobs.sortDate)
+                    self.output += self.temp
+                    self.temp.clear()
+        else:
+            return 'Wrong parameter'
         return self.output
 
 
 host = sys.argv[1]
 user = sys.argv[2]
 password = sys.argv[3]
-'''host = '54.246.249.61:8080'
+'''host = '34.241.236.151:8080'
 user = 'gb'
-password = 'jennyohjenny'''
+password = 'jennyohjenny'''''
 
 c = JenkinsConnection(host, user, password)
 c.startConnection()
@@ -58,6 +76,19 @@ print(c.printDetails())
 
 j = JenkinsJobs(c)
 jobs = j.getJobsInfo()
+
+#print(jobs[0][1])
+
+'''
+def sortBuild(joblist):
+    return joblist[1]
+
+def sortDate(joblist):
+    return datetime.strptime(joblist[2], '%Y-%m-%d %H:%M:%S')
+'''
+#jobs.sort(reverse=True, key=sortBuild)
+
+#jobs.sort(reverse=True, key=sortDate)
 
 for each in jobs:
     print(each)
