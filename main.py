@@ -1,5 +1,9 @@
-import jenkins, sys
 from datetime import datetime
+
+import jenkins
+import sys
+import json
+
 
 class JenkinsConnection:
     def __init__(self, host, user, password):
@@ -49,17 +53,18 @@ class JenkinsJobs:
                 self.builds = self.connection.getServer().get_job_info(eachJob['name'])
                 for eachBuild in self.builds['builds']:
                     self.build = self.connection.getServer().get_build_info(eachJob['name'],int(eachBuild['number']))
-                    self.temp.append((eachJob['name'],eachBuild['number'],str(datetime.utcfromtimestamp(int(str(self.build['timestamp'])[:10]))),self.build['actions'][0]['causes'][0].get('userName'),self.build['result']))
+                    self.temp.append({'JobName':eachJob['name'],'BuildNumber':eachBuild['number'],'StartDate':str(datetime.utcfromtimestamp(int(str(self.build['timestamp'])[:10]))),'StartedBy':self.build['actions'][0]['causes'][0].get('userName'),'BuildResult':self.build['result']})
                 if sort == 'b':
-                    self.temp.sort(reverse=True, key=JenkinsJobs.sortBuild)
-                    self.output += self.temp
+                    #self.temp.sort(reverse=True, key=JenkinsJobs.sortBuild)
+                    self.output += sorted(self.temp, reverse=True, key = lambda d: d['BuildNumber'])
                     self.temp.clear()
                 if sort == 'd':
-                    self.temp.sort(reverse=True, key=JenkinsJobs.sortDate)
-                    self.output += self.temp
+                    #self.temp.sort(reverse=True, key=JenkinsJobs.sortDate)
+                    self.output += sorted(self.temp, reverse=True, key = lambda d: d['StartDate'])
                     self.temp.clear()
         else:
             return 'Wrong parameter'
+        self.output = json.dumps(self.output, indent=4)
         return self.output
 
 
@@ -75,7 +80,7 @@ c.startConnection()
 print(c.printDetails())
 
 j = JenkinsJobs(c)
-jobs = j.getJobsInfo()
+jobs = j.getJobsInfo(sort='d')
 
 #print(jobs[0][1])
 
@@ -90,6 +95,7 @@ def sortDate(joblist):
 
 #jobs.sort(reverse=True, key=sortDate)
 
-for each in jobs:
-    print(each)
+'''for each in jobs:
+    print(each)'''
+print(jobs)
 
