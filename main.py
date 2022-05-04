@@ -45,7 +45,7 @@ class JenkinsJobs:
     def sortDate(joblist):
         return datetime.strptime(joblist[2], '%Y-%m-%d %H:%M:%S')
 
-    def getJobsInfo(self, sort = 'b', print = 's', fpath = None):
+    def getJobsInfo(self, sort = 'b', fpath = None):
         if sort == 'b' or sort == 'd':
             self.output = []
             self.temp = []
@@ -66,31 +66,62 @@ class JenkinsJobs:
         else:
             return 'Wrong parameter - b for order by build no, d for order by start date'
         self.output = json.dumps(self.output, indent=4)
-        if print == 's':
+        if fpath == None:
             return self.output
-        elif print == 'f':
+        else:
             try:
-                if fpath != None:
-                    if os.path.isfile(fpath) == False:
-                        f = open(fpath, 'w')
-                        f.write(self.output)
-                        f.close()
-                        return 'File ' + str(fpath) + ' created'
-                    else:
-                        return 'File already exits'
+                if os.path.isfile(fpath) == False:
+                    f = open(fpath, 'w')
+                    f.write(self.output)
+                    f.close()
+                    return 'File ' + str(fpath) + ' created'
                 else:
-                    return 'Provide file path'
+                    return 'File already exits'
             except FileNotFoundError:
                 return str(fpath) + ' - Wrong file name'
-        else:
-            return 'Wrong parameter - s for showing results on screen, f + path for writing it to a file'
 
+
+    def jobsResultCounter(self, fpath = None):
+        if fpath:
+            try:
+                if os.path.isfile(fpath) != False:
+                    f = open(fpath, 'r')
+                    tempJSON = json.load(f)
+                    f.close()
+                    jobList = []
+                    first = True
+                    jobCounter = 0
+                    successCounter = 0
+                    failureCounter = 0
+                    abortedCounter = 0
+                    for eachRecord in tempJSON:
+                        try:
+                            if eachRecord['JobName'] not in jobList[jobCounter-1]:
+                                first = True
+                        except IndexError:
+                            placeholder = None
+                        if first:
+                            jobList.append({eachRecord['JobName']:eachRecord['BuildNumber'],'result':eachRecord['BuildResult']})
+                            jobCounter +=1
+                            first = False
+                        if not first and int(jobList[jobCounter-1][eachRecord['JobName']])<int(eachRecord['BuildNumber']) : jobList[jobCounter-1].update({eachRecord['JobName']:eachRecord['BuildNumber']})
+                    for eachJob in jobList:
+                        match eachJob['result']:
+                            case 'SUCCESS': successCounter += 1
+                            case 'FAILURE': failureCounter += 1
+                            case 'ABORTED': abortedCounter += 1
+                    return str(len(jobList)) + ' jobs total, ' + str(successCounter) + ' was succesful, ' + str(failureCounter)+ ' was failed, ' + str(abortedCounter)+ ' was aborted.'
+                else:
+                    return 'File doesn\'t exist'
+            except FileNotFoundError:
+                return str(fpath) + ' - Wrong file name'
+        return
 
 
 host = sys.argv[1]
 user = sys.argv[2]
 password = sys.argv[3]
-'''host = '34.241.236.151:8080'
+'''host = '54.154.29.204:8080'
 user = 'gb'
 password = 'jennyohjenny'''
 
@@ -99,22 +130,7 @@ c.startConnection()
 print(c.printDetails())
 
 j = JenkinsJobs(c)
-jobs = j.getJobsInfo(sort='b', print='f', fpath='plik.txt')
+#jobs = j.getJobsInfo(sort='d', fpath='plik.txt')
+#print(jobs)
 
-#print(jobs[0][1])
-
-'''
-def sortBuild(joblist):
-    return joblist[1]
-
-def sortDate(joblist):
-    return datetime.strptime(joblist[2], '%Y-%m-%d %H:%M:%S')
-'''
-#jobs.sort(reverse=True, key=sortBuild)
-
-#jobs.sort(reverse=True, key=sortDate)
-
-'''for each in jobs:
-    print(each)'''
-print(jobs)
-
+print(j.jobsResultCounter('plik.txt'))
