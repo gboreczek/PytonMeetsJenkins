@@ -4,6 +4,7 @@ import jenkins
 import sys
 import json
 import os
+import logging
 
 
 class JenkinsConnection:
@@ -15,6 +16,7 @@ class JenkinsConnection:
 
     def startConnection(self):
         try:
+            logging.info(str(datetime.now()) + ' connecting to Jenkins server')
             self.__server = jenkins.Jenkins('http://' + self.host, username=self.user, password=self.password, timeout=5)
             self.__user = self.__server.get_whoami()
             self.version = self.__server.get_version()
@@ -22,6 +24,7 @@ class JenkinsConnection:
             print('Jenkins connection timeout')
         else:
             self.connFlag = True
+            logging.info(str(datetime.now()) + ' connected to Jenkins server')
 
     def getServer(self):
         return self.__server
@@ -50,8 +53,10 @@ class JenkinsJobs:
         try:
             if os.path.isfile(fpath) == False:
                 f = open(fpath, 'w')
+                logging.info(str(datetime.now()) + ' opening file for saving data')
                 f.write(self.output)
                 f.close()
+                logging.info(str(datetime.now()) + ' file closed')
                 return 'File ' + str(fpath) + ' created'
             else:
                 return 'File already exits'
@@ -63,7 +68,10 @@ class JenkinsJobs:
         if sort == 'b' or sort == 'd':
             self.output = []
             self.temp = []
+            logging.info(str(datetime.now()) + ' fetching jobs data')
+            print('Fetching jobs data')
             self.jobs = self.connection.getServer().get_jobs()
+            logging.info(str(datetime.now()) + ' creating output data')
             for eachJob in self.jobs:
                 self.builds = self.connection.getServer().get_job_info(eachJob['name'])
                 for eachBuild in self.builds['builds']:
@@ -97,6 +105,7 @@ class JenkinsJobs:
         successCounter = 0
         failureCounter = 0
         abortedCounter = 0
+        logging.info(str(datetime.now()) + ' counting failed/passed jobs')
         for eachRecord in source:
             try:
                 if eachRecord['JobName'] not in jobList[jobCounter - 1]:
@@ -109,6 +118,7 @@ class JenkinsJobs:
                 first = False
             if not first and int(jobList[jobCounter - 1][eachRecord['JobName']]) < int(eachRecord['BuildNumber']):
                 jobList[jobCounter - 1].update({eachRecord['JobName']: eachRecord['BuildNumber']})
+        logging.info(str(datetime.now()) + ' creating output data')
         for eachJob in jobList:
             match eachJob['result']:
                 case 'SUCCESS':
@@ -123,9 +133,13 @@ class JenkinsJobs:
     def jobResultPresenter(self, fpath = None):
         if fpath == None:
             fpath = str(datetime.timestamp(datetime.now())) + '.txt'
-            self.__jobInfoSaver(fpath)
+            try:
+                self.__jobInfoSaver(fpath)
+            except TypeError:
+                return 'Fetched job data needed. Call info or provide a file.'
         try:
             if os.path.isfile(fpath) != False:
+                logging.info(str(datetime.now()) + ' opening file for counting failed/passed jobs')
                 f = open(fpath, 'r')
                 JSON = json.load(f)
                 f.close()
@@ -133,23 +147,66 @@ class JenkinsJobs:
         except FileNotFoundError:
             return str(fpath) + ' - Wrong file name'
 
+logging.basicConfig(filename='log.log', level=logging.INFO)
+logging.basicConfig(filename='debug.log', level=logging.DEBUG)
 
-'''host = sys.argv[1]
+host = sys.argv[1]
 user = sys.argv[2]
-password = sys.argv[3]'''
-host = '54.154.29.204:8080'
+password = sys.argv[3]
+'''host = '54.154.29.204:8080'
 user = 'gb'
-password = 'jennyohjenny'
+password = 'jennyohjenny'''
+
+print('-----------------Jenkins Job Info Fetcher v1.0')
 
 c = JenkinsConnection(host, user, password)
 c.startConnection()
-print(c.printDetails())
-
 j = JenkinsJobs(c)
-j.getJobsInfo()
+print(c.printDetails())
+state = True
+while state:
+    option = None
+    sort = None
+    fpath = None
+    print('''\nWhich path of destiny will you choose young devops apprentice?
+Type:
+info for fetching Jenkins jobs information
+count for counting failed/passed jobs (it needs fetched jobs info - it can be fetched from local file)
+exit for exit ;)''')
+    option = input('\n')
+    match option:
+        case 'info':
+            print('type b/d for sorting the data by build number or start date - b is default')
+            sort = input('\n')
+            if len(sort)<1: sort = 'b'
+            print('''if you want to save the data to local file, type it\'s path,
+otherwise the data will be shown on the screen''')
+            fpath = input('\n')
+            if len(fpath)<1: fpath = None
+            print(j.getJobsInfo(sort = sort, fpath = fpath))
+            input('\nHit enter to continue')
+        case 'count':
+            print('if you want to use data from a file, type it\'s path')
+            fpath = input('\n')
+            if len(fpath) < 1: fpath = None
+            print(j.jobResultPresenter(fpath = fpath))
+            input('\nHit enter to continue')
+        case 'exit':
+            print('''
+★─▄█▀▀║░▄█▀▄║▄█▀▄║██▀▄║─★
+★─██║▀█║██║█║██║█║██║█║─★
+★─▀███▀║▀██▀║▀██▀║███▀║─★
+★───────────────────────★
+★───▐█▀▄─ ▀▄─▄▀ █▀▀──█───★
+★───▐█▀▀▄ ──█── █▀▀──▀───★
+★───▐█▄▄▀ ──▀── ▀▀▀──▄───★ ''')
+            state = False
+        case _:
+            print('Przed wyruszeniem w drogę, należy zebrać drużynę')
+            input('\nHit enter to continue')
 #jobs = j.getJobsInfo(sort='d', fpath='plik.txt')
 #print(jobs)
 
 #print(j.jobsResultCounter('plik.txt'))
 
-print(j.jobResultPresenter())
+#print(j.jobResultPresenter())
