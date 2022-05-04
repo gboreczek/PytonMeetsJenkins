@@ -3,6 +3,7 @@ from datetime import datetime
 import jenkins
 import sys
 import json
+import os
 
 
 class JenkinsConnection:
@@ -44,7 +45,7 @@ class JenkinsJobs:
     def sortDate(joblist):
         return datetime.strptime(joblist[2], '%Y-%m-%d %H:%M:%S')
 
-    def getJobsInfo(self, sort = 'b'):
+    def getJobsInfo(self, sort = 'b', print = 's', fpath = None):
         if sort == 'b' or sort == 'd':
             self.output = []
             self.temp = []
@@ -63,9 +64,27 @@ class JenkinsJobs:
                     self.output += sorted(self.temp, reverse=True, key = lambda d: d['StartDate'])
                     self.temp.clear()
         else:
-            return 'Wrong parameter'
+            return 'Wrong parameter - b for order by build no, d for order by start date'
         self.output = json.dumps(self.output, indent=4)
-        return self.output
+        if print == 's':
+            return self.output
+        elif print == 'f':
+            try:
+                if fpath != None:
+                    if os.path.isfile(fpath) == False:
+                        f = open(fpath, 'w')
+                        f.write(self.output)
+                        f.close()
+                        return 'File ' + str(fpath) + ' created'
+                    else:
+                        return 'File already exits'
+                else:
+                    return 'Provide file path'
+            except FileNotFoundError:
+                return str(fpath) + ' - Wrong file name'
+        else:
+            return 'Wrong parameter - s for showing results on screen, f + path for writing it to a file'
+
 
 
 host = sys.argv[1]
@@ -73,14 +92,14 @@ user = sys.argv[2]
 password = sys.argv[3]
 '''host = '34.241.236.151:8080'
 user = 'gb'
-password = 'jennyohjenny'''''
+password = 'jennyohjenny'''
 
 c = JenkinsConnection(host, user, password)
 c.startConnection()
 print(c.printDetails())
 
 j = JenkinsJobs(c)
-jobs = j.getJobsInfo(sort='d')
+jobs = j.getJobsInfo(sort='b', print='f', fpath='plik.txt')
 
 #print(jobs[0][1])
 
