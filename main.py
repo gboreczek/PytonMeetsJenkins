@@ -163,7 +163,9 @@ c = JenkinsConnection(host, user, password)
 c.startConnection()
 j = JenkinsJobs(c)
 print(c.printDetails())
-state = True
+if c.connFlag: state = True
+else: state = False
+
 while state:
     option = None
     sort = None
