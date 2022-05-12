@@ -158,7 +158,7 @@ user = 'gb'
 password = 'jennyohjenny'''
 
 print('-----------------Jenkins Job Info Fetcher v1.0')
-
+print('Host:', host,' user:',user,' pass:',password)
 c = JenkinsConnection(host, user, password)
 c.startConnection()
 j = JenkinsJobs(c)
