@@ -20,8 +20,8 @@ pipeline {
         stage('Smoke/connection test') { 
             steps {
                 sh '''
-					sudo docker run -it --rm -v ~/PytonMeetsJenkins:/usr/src/app localhost:5000/python-meets-jenkins
-					exit
+					sudo docker run -t --rm -v ~/PytonMeetsJenkins:/usr/src/app localhost:5000/python-meets-jenkins > stdout.log
+					cat stdout.log
 				'''				
             }
         }        
