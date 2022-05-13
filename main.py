@@ -8,10 +8,11 @@ import logging
 
 
 class JenkinsConnection:
-    def __init__(self, host, user, password):
-        self.host = host
-        self.user = user
-        self.password = password
+    #def __init__(self, host, user, password):
+    def __init__(self, credentials):
+        self.host = credentials.host
+        self.user = credentials.user
+        self.password = credentials.password
         self.connFlag = False
 
     def startConnection(self):
@@ -147,19 +148,36 @@ class JenkinsJobs:
         except FileNotFoundError:
             return str(fpath) + ' - Wrong file name'
 
+class CredentialsFetcher:
+    def __init__(self):
+        self.host = ""
+        self.user = ""
+        self.password = ""
+
+    def fetchCredentials(self, path):
+        with open(path) as json_file:
+            data = json.load(json_file)
+        self.host = data['host']
+        self.user = data['user']
+        self.password = data['password']
+
+
 logging.basicConfig(filename='log.log', level=logging.INFO)
 logging.basicConfig(filename='debug.log', level=logging.DEBUG)
 
-host = sys.argv[1]
-user = sys.argv[2]
-password = sys.argv[3]
+#host = sys.argv[1]
+#user = sys.argv[2]
+#password = sys.argv[3]
 '''host = '54.154.29.204:8080'
 user = 'gb'
 password = 'jennyohjenny'''
 
 print('-----------------Jenkins Job Info Fetcher v1.0')
+cf = CredentialsFetcher()
+cf.fetchCredentials('passy.json')
 #print('Host:', host,' user:',user,' pass:',password)
-c = JenkinsConnection(host, user, password)
+#c = JenkinsConnection(host, user, password)
+c = JenkinsConnection(cf)
 c.startConnection()
 j = JenkinsJobs(c)
 print(c.printDetails())
