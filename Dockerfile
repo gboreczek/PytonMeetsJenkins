@@ -10,4 +10,4 @@ COPY . .
 
 ENV HOST="localhost" USER="user" PASS="pass"
 
-CMD ["sh", "-c", "python main.py ${HOST} ${USER} ${PASS}"]
+CMD ["sh", "-c", "python main.py"]
